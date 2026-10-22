@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clínica Vet – CRUD</title>
+<style>
+ body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem}
+ h2{margin-top:2rem} form{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0}
+ input,select,button{padding:.4rem .6rem} table{border-collapse:collapse;width:100%}
+ td,th{border:1px solid #ccc;padding:.35rem .5rem;text-align:left} #msg{color:#b00}
+</style></head><body>
+<h1>Clínica Veterinária</h1><p id="msg"></p>
+
+<h2>Tutores</h2>
+<form id="ft"><input type="hidden" id="tid">
+ <input id="tnome" placeholder="Nome" required><input id="temail" type="email" placeholder="E-mail" required>
+ <input id="ttel" placeholder="Telefone"><button>Salvar</button></form>
+<table id="tt"></table>
+
+<h2>Pets</h2>
+<form id="fp"><input type="hidden" id="pid">
+ <select id="ptutor" required></select><input id="pnome" placeholder="Nome" required>
+ <input id="pesp" placeholder="Espécie" required><input id="praca" placeholder="Raça">
+ <input id="pnasc" type="date"><button>Salvar</button></form>
+<table id="tp"></table>
+
+<script>
+const API = "/api";
+const $ = id => document.getElementById(id);
+const msg = t => $("msg").textContent = t || "";
+async function call(path, method="GET", body){
+  const r = await fetch(API+path,{method,headers:{"Content-Type":"application/json"},
+    body: body?JSON.stringify(body):undefined});
+  if(r.status===204) return null;
+  const j = await r.json(); if(!r.ok) throw new Error(j.erro||r.status); return j;
+}
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tutores=[], pets=[];
+async function load(){
+  try{ msg(); tutores=await call("/tutores"); pets=await call("/pets"); render(); }
+  catch(e){ msg(e.message); }
+}
+function render(){
+  $("ptutor").innerHTML = tutores.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("");
+  $("tt").innerHTML = "<tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th></th></tr>"+
+   tutores.map(t=>`<tr><td>${t.id}</td><td>${esc(t.nome)}</td><td>${esc(t.email)}</td><td>${esc(t.telefone)}</td>
+   <td><button onclick="editT(${t.id})">Editar</button> <button onclick="delT(${t.id})">Excluir</button></td></tr>`).join("");
+  $("tp").innerHTML = "<tr><th>ID</th><th>Pet</th><th>Espécie</th><th>Raça</th><th>Nasc.</th><th>Tutor</th><th></th></tr>"+
+   pets.map(p=>`<tr><td>${p.id}</td><td>${esc(p.nome)}</td><td>${esc(p.especie)}</td><td>${esc(p.raca)}</td>
+   <td>${esc(p.data_nascimento)}</td><td>${esc(p.tutor_nome)}</td>
+   <td><button onclick="editP(${p.id})">Editar</button> <button onclick="delP(${p.id})">Excluir</button></td></tr>`).join("");
+}
+$("ft").onsubmit = async e=>{ e.preventDefault();
+  const b={nome:$("tnome").value,email:$("temail").value,telefone:$("ttel").value}, id=$("tid").value;
+  try{ id? await call("/tutores/"+id,"PUT",b) : await call("/tutores","POST",b); e.target.reset(); $("tid").value=""; load(); }
+  catch(x){ msg(x.message); } };
+$("fp").onsubmit = async e=>{ e.preventDefault();
+  const b={tutor_id:$("ptutor").value,nome:$("pnome").value,especie:$("pesp").value,raca:$("praca").value,data_nascimento:$("pnasc").value}, id=$("pid").value;
+  try{ id? await call("/pets/"+id,"PUT",b) : await call("/pets","POST",b); e.target.reset(); $("pid").value=""; load(); }
+  catch(x){ msg(x.message); } };
+window.editT = id=>{ const t=tutores.find(x=>x.id==id); $("tid").value=t.id;$("tnome").value=t.nome;$("temail").value=t.email;$("ttel").value=t.telefone||""; };
+window.editP = id=>{ const p=pets.find(x=>x.id==id); $("pid").value=p.id;$("ptutor").value=p.tutor_id;$("pnome").value=p.nome;$("pesp").value=p.especie;$("praca").value=p.raca||"";$("pnasc").value=p.data_nascimento||""; };
+window.delT = async id=>{ if(confirm("Excluir tutor e seus pets?")){ try{await call("/tutores/"+id,"DELETE");load();}catch(x){msg(x.message);} } };
+window.delP = async id=>{ if(confirm("Excluir pet?")){ try{await call("/pets/"+id,"DELETE");load();}catch(x){msg(x.message);} } };
+load();
+</script></body></html>
