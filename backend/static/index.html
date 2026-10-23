@@ -1,27 +1,516 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Clínica Vet – CRUD</title>
-<style>
- body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem}
- h2{margin-top:2rem} form{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0}
- input,select,button{padding:.4rem .6rem} table{border-collapse:collapse;width:100%}
- td,th{border:1px solid #ccc;padding:.35rem .5rem;text-align:left} #msg{color:#b00}
-</style></head><body>
-<h1>Clínica Veterinária</h1><p id="msg"></p>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clínica Veterinária — Painel de Gestão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #fbf7f2;
+      --bg-surface: #ffffff;
+      --bg-surface-alt: #f5ede1;
+      --border-color: #eadbca;
+      --border-focus: #b91c1c;
+      
+      --red-primary: #9b1c23;
+      --red-hover: #7f161c;
+      --red-light: #fef2f2;
+      --red-accent: #dc2626;
+      
+      --beige-warm: #eee4d4;
+      --beige-dark: #8c735d;
+      --text-main: #2b1f1d;
+      --text-muted: #735e59;
+      --text-light: #9c8a86;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --shadow-sm: 0 2px 4px rgba(78, 30, 30, 0.04);
+      --shadow-md: 0 10px 25px -5px rgba(85, 23, 23, 0.07), 0 8px 10px -6px rgba(85, 23, 23, 0.04);
+      --shadow-lg: 0 20px 30px -10px rgba(99, 21, 21, 0.12);
+    }
 
-<h2>Tutores</h2>
-<form id="ft"><input type="hidden" id="tid">
- <input id="tnome" placeholder="Nome" required><input id="temail" type="email" placeholder="E-mail" required>
- <input id="ttel" placeholder="Telefone"><button>Salvar</button></form>
-<table id="tt"></table>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-<h2>Pets</h2>
-<form id="fp"><input type="hidden" id="pid">
- <select id="ptutor" required></select><input id="pnome" placeholder="Nome" required>
- <input id="pesp" placeholder="Espécie" required><input id="praca" placeholder="Raça">
- <input id="pnasc" type="date"><button>Salvar</button></form>
-<table id="tp"></table>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 2.5rem 1.5rem 5rem 1.5rem;
+      background-image: radial-gradient(#eadbc9 0.75px, transparent 0.75px);
+      background-size: 20px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Cabeçalho */
+    header {
+      background: linear-gradient(135deg, #88151b 0%, #b91c1c 100%);
+      color: #ffffff;
+      padding: 2.5rem 2.2rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      bottom: -40px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .header-icon {
+      width: 58px;
+      height: 58px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #fce7e7;
+      margin-top: 0.2rem;
+      font-weight: 500;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .badge-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background-color: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #4ade80;
+    }
+
+    /* Notificações / Mensagem de Erro */
+    #msg {
+      display: none;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      background-color: #fef2f2;
+      border-left: 5px solid var(--red-accent);
+      color: #991b1b;
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    #msg:not(:empty) {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Cards e Seções */
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1.5px solid var(--bg-surface-alt);
+      padding-bottom: 0.9rem;
+    }
+
+    .section-header span {
+      font-size: 1.5rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+    }
+
+    /* Formulários */
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      background: var(--bg-surface-alt);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      margin-bottom: 1.75rem;
+      align-items: flex-end;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.92rem;
+      color: var(--text-main);
+      background-color: #ffffff;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+      background-color: #ffffff;
+    }
+
+    input::placeholder {
+      color: var(--text-light);
+    }
+
+    button {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.92rem;
+      padding: 0.75rem 1.4rem;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    /* Botão de envio dos formulários */
+    form button {
+      background: linear-gradient(135deg, var(--red-primary) 0%, var(--red-hover) 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(155, 28, 35, 0.25);
+      height: 44px;
+    }
+
+    form button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(155, 28, 35, 0.35);
+      background: linear-gradient(135deg, #a82027 0%, #8c1920 100%);
+    }
+
+    form button:active {
+      transform: translateY(1px);
+    }
+
+    /* Tabelas */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+      background: #ffffff;
+    }
+
+    th {
+      background-color: #f7efe6;
+      color: var(--red-primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      padding: 1rem 1.2rem;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.95rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: #fffaf4;
+    }
+
+    td:last-child {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    td button {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-left: 0.4rem;
+    }
+
+    /* Botão Editar */
+    td button:first-child {
+      background-color: var(--bg-surface-alt);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    td button:first-child:hover {
+      background-color: var(--beige-warm);
+      border-color: var(--beige-dark);
+      transform: translateY(-1px);
+    }
+
+    /* Botão Excluir */
+    td button:last-child {
+      background-color: var(--red-light);
+      color: var(--red-primary);
+      border: 1px solid #fecaca;
+    }
+
+    td button:last-child:hover {
+      background-color: var(--red-primary);
+      color: #ffffff;
+      border-color: var(--red-primary);
+      transform: translateY(-1px);
+    }
+
+    /* Card de Identificação no Canto Inferior Direito */
+    .corner-credits {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-top: 3px solid var(--red-primary);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1.1rem;
+      box-shadow: 0 10px 25px rgba(43, 31, 29, 0.15);
+      font-size: 0.8rem;
+      color: var(--text-main);
+      max-width: 320px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .corner-credits:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(43, 31, 29, 0.2);
+    }
+
+    .corner-credits-header {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: var(--red-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--beige-warm);
+      padding-bottom: 0.35rem;
+    }
+
+    .corner-credits ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .corner-credits li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .corner-credits .name {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .corner-credits .ra {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background-color: var(--bg-surface-alt);
+      color: var(--red-primary);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1.2rem 0.8rem 6rem 0.8rem;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.8rem 1.4rem;
+      }
+
+      .section-card {
+        padding: 1.4rem;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      .corner-credits {
+        position: static;
+        margin: 2rem auto 0 auto;
+        max-width: 100%;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-info">
+      <div class="header-icon">🐾</div>
+      <div>
+        <h1>Clínica Veterinária</h1>
+        <p class="subtitle">Gestão clínica, tutores e prontuários de pets</p>
+      </div>
+    </div>
+    <div class="badge-status">Sistema Ativo</div>
+  </header>
+
+  <p id="msg"></p>
+
+  <!-- Seção Tutores -->
+  <section class="section-card">
+    <div class="section-header">
+      <span>👤</span>
+      <h2>Tutores</h2>
+    </div>
+
+    <form id="ft">
+      <input type="hidden" id="tid">
+      <input id="tnome" placeholder="Nome completo" required>
+      <input id="temail" type="email" placeholder="E-mail de contato" required>
+      <input id="ttel" placeholder="Telefone / Celular">
+      <button type="submit">Salvar Tutor</button>
+    </form>
+
+    <div class="table-container">
+      <table id="tt"></table>
+    </div>
+  </section>
+
+  <!-- Seção Pets -->
+  <section class="section-card">
+    <div class="section-header">
+      <span>🐶</span>
+      <h2>Pets</h2>
+    </div>
+
+    <form id="fp">
+      <input type="hidden" id="pid">
+      <select id="ptutor" required></select>
+      <input id="pnome" placeholder="Nome do pet" required>
+      <input id="pesp" placeholder="Espécie (ex: Cão, Gato)" required>
+      <input id="praca" placeholder="Raça">
+      <input id="pnasc" type="date" title="Data de Nascimento">
+      <button type="submit">Salvar Pet</button>
+    </form>
+
+    <div class="table-container">
+      <table id="tp"></table>
+    </div>
+  </section>
+</div>
+
+<!-- Card de Identificação no Canto -->
+<div class="corner-credits">
+  <div class="corner-credits-header">
+    <span>📋</span> Integrantes do Projeto
+  </div>
+  <ul>
+    <li><span class="name">Gabriela Nellessen de Sousa</span><span class="ra">10441930</span></li>
+    <li><span class="name">Guilherme Varago Anaya</span><span class="ra">10437532</span></li>
+    <li><span class="name">Max Martins Alvarez</span><span class="ra">10453922</span></li>
+    <li><span class="name">Melissa Zanelato Lupinacci</span><span class="ra">10436651</span></li>
+    <li><span class="name">Moisés Santos</span><span class="ra">10419955</span></li>
+  </ul>
+</div>
 
 <script>
 const API = "/api";
@@ -41,13 +530,13 @@ async function load(){
 }
 function render(){
   $("ptutor").innerHTML = tutores.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("");
-  $("tt").innerHTML = "<tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th></th></tr>"+
-   tutores.map(t=>`<tr><td>${t.id}</td><td>${esc(t.nome)}</td><td>${esc(t.email)}</td><td>${esc(t.telefone)}</td>
-   <td><button onclick="editT(${t.id})">Editar</button> <button onclick="delT(${t.id})">Excluir</button></td></tr>`).join("");
-  $("tp").innerHTML = "<tr><th>ID</th><th>Pet</th><th>Espécie</th><th>Raça</th><th>Nasc.</th><th>Tutor</th><th></th></tr>"+
-   pets.map(p=>`<tr><td>${p.id}</td><td>${esc(p.nome)}</td><td>${esc(p.especie)}</td><td>${esc(p.raca)}</td>
+  $("tt").innerHTML = "<tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Ações</th></tr>"+
+   tutores.map(t=>`<tr><td><strong>#${t.id}</strong></td><td>${esc(t.nome)}</td><td>${esc(t.email)}</td><td>${esc(t.telefone)}</td>
+   <td><button onclick="editT(${t.id})">Editar</button><button onclick="delT(${t.id})">Excluir</button></td></tr>`).join("");
+  $("tp").innerHTML = "<tr><th>ID</th><th>Pet</th><th>Espécie</th><th>Raça</th><th>Nasc.</th><th>Tutor</th><th>Ações</th></tr>"+
+   pets.map(p=>`<tr><td><strong>#${p.id}</strong></td><td>${esc(p.nome)}</td><td>${esc(p.especie)}</td><td>${esc(p.raca)}</td>
    <td>${esc(p.data_nascimento)}</td><td>${esc(p.tutor_nome)}</td>
-   <td><button onclick="editP(${p.id})">Editar</button> <button onclick="delP(${p.id})">Excluir</button></td></tr>`).join("");
+   <td><button onclick="editP(${p.id})">Editar</button><button onclick="delP(${p.id})">Excluir</button></td></tr>`).join("");
 }
 $("ft").onsubmit = async e=>{ e.preventDefault();
   const b={nome:$("tnome").value,email:$("temail").value,telefone:$("ttel").value}, id=$("tid").value;
@@ -62,4 +551,6 @@ window.editP = id=>{ const p=pets.find(x=>x.id==id); $("pid").value=p.id;$("ptut
 window.delT = async id=>{ if(confirm("Excluir tutor e seus pets?")){ try{await call("/tutores/"+id,"DELETE");load();}catch(x){msg(x.message);} } };
 window.delP = async id=>{ if(confirm("Excluir pet?")){ try{await call("/pets/"+id,"DELETE");load();}catch(x){msg(x.message);} } };
 load();
-</script></body></html>
+</script>
+</body>
+</html>
